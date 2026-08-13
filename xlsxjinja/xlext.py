@@ -4,6 +4,12 @@ import os
 from inspect import isfunction
 
 from jinja2 import nodes
+import os
+import subprocess
+import tempfile
+from io import BytesIO
+from base64 import b64decode
+from PIL import Image as PILImage
 from jinja2.ext import Extension
 from jinja2.runtime import Undefined
 

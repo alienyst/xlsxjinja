@@ -61,3 +61,18 @@ ExcelWriter._write_images = ExWriter._write_images
 # Fix geometry guide list XML namespace issue
 GeomGuideList.tagname = "avLst"
 GeomGuideList.namespace = DRAWING_NS
+
+try:
+    import datetime
+    from openpyxl.packaging.core import NestedDateTime
+
+    _original_to_tree = NestedDateTime.to_tree
+
+    def _patched_to_tree(self, tagname=None, value=None, namespace=None):
+        if value is not None and value.tzinfo is not None:
+            value = value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        return _original_to_tree(self, tagname, value, namespace)
+
+    NestedDateTime.to_tree = _patched_to_tree
+except Exception as exc:
+    logger.warning(f"Unable to patch openpyxl NestedDateTime: {exc}")
