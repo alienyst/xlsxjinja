@@ -189,14 +189,14 @@ class BookWriter(BookBase, BookMixin):
                 if isinstance(value, str):
                     if re.search(r'\{%\s*tr\s*%\}', value, re.I):
                         value = re.sub(r'\{%\s*tr\s*%\}', '', value, flags=re.I).strip()
-                        start_match = re.match(r'^(\{%\s*(?:for|if).*?%\})', value, re.I)
+                        start_match = re.match(r'^((?:\{%\s*(?:for|if|elif|else).*?%\}\s*)+)', value, re.I)
                         if start_match:
                             tag = start_match.group(1)
                             value = value[len(tag):].strip()
                             if not row_node.cell_tag:
                                 row_node.cell_tag = CellTag()
                             row_node.cell_tag.beforerow += tag
-                        end_match = re.search(r'(\{%\s*(?:endfor|endif).*?%\})$', value, re.I)
+                        end_match = re.search(r'((?:\{%\s*(?:endfor|endif).*?%\}\s*)+)$', value, re.I)
                         if end_match:
                             tag = end_match.group(1)
                             value = value[:-len(tag)].strip()
@@ -240,7 +240,10 @@ class BookWriter(BookBase, BookMixin):
                     cell_tag = CellTag(cell_tag_map)
                     cell_node.extend_cell_tag(cell_tag)
                     if colx == 1:
-                        row_node.cell_tag = cell_tag
+                        if not row_node.cell_tag:
+                            row_node.cell_tag = cell_tag
+                        else:
+                            row_node.cell_tag.extend(cell_tag)
                 
                 # Propagate beforerow from cell text to row node
                 if cell_node.cell_tag and (cell_node.cell_tag.beforerow or hasattr(cell_node.cell_tag, 'afterrow') and cell_node.cell_tag.afterrow):
