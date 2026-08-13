@@ -183,6 +183,33 @@ class BookWriter(BookBase, BookMixin):
                         _, cell_tag_map = parse_cell_tag(comment)
                 value = sheet_cell._value
                 data_type = sheet_cell.data_type
+                
+                # ---- FEATURE: TR and TC tags ----
+                import re
+                if isinstance(value, str):
+                    if re.search(r'\{%\s*tr\s*%\}', value, re.I):
+                        value = re.sub(r'\{%\s*tr\s*%\}', '', value, flags=re.I).strip()
+                        start_match = re.match(r'^(\{%\s*(?:for|if).*?%\})', value, re.I)
+                        if start_match:
+                            tag = start_match.group(1)
+                            value = value[len(tag):].strip()
+                            if not row_node.cell_tag:
+                                row_node.cell_tag = CellTag()
+                            row_node.cell_tag.beforerow += tag
+                        end_match = re.search(r'(\{%\s*(?:endfor|endif).*?%\})$', value, re.I)
+                        if end_match:
+                            tag = end_match.group(1)
+                            value = value[:-len(tag)].strip()
+                            if not cell_tag_map:
+                                cell_tag_map = {}
+                            if 'aftercell' not in cell_tag_map:
+                                cell_tag_map['aftercell'] = ''
+                            cell_tag_map['aftercell'] += tag
+                            
+                    if isinstance(value, str) and re.search(r'\{%\s*tc\s*%\}', value, re.I):
+                        value = re.sub(r'\{%\s*tc\s*%\}', '', value, flags=re.I).strip()
+                # ---------------------------------
+                
                 if data_type == "s":
                     rich_text = None
                     if isinstance(value, CellRichText):
@@ -214,6 +241,15 @@ class BookWriter(BookBase, BookMixin):
                     cell_node.extend_cell_tag(cell_tag)
                     if colx == 1:
                         row_node.cell_tag = cell_tag
+                
+                # Propagate beforerow from cell text to row node
+                if cell_node.cell_tag and (cell_node.cell_tag.beforerow or hasattr(cell_node.cell_tag, 'afterrow') and cell_node.cell_tag.afterrow):
+                    if not row_node.cell_tag:
+                        row_node.cell_tag = CellTag()
+                    row_node.cell_tag.beforerow += cell_node.cell_tag.beforerow
+                    if hasattr(cell_node.cell_tag, 'afterrow'):
+                        row_node.cell_tag.afterrow += cell_node.cell_tag.afterrow
+                
                 tree.add_child(cell_node)
         tree.add_child(Node())  # Terminal node
         return tree
