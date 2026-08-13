@@ -1,25 +1,32 @@
 """Custom Jinja2 extensions for Excel template rendering."""
 
 import os
+from io import BytesIO
+from base64 import b64decode
 from inspect import isfunction
 
 from jinja2 import nodes
-import os
-import subprocess
-import tempfile
-from io import BytesIO
-from base64 import b64decode
-from PIL import Image as PILImage
 from jinja2.ext import Extension
 from jinja2.runtime import Undefined
 
-# Check for PIL availability
+# Check for PIL availability and register WebP plugin
 try:
+    from PIL import Image as PILImage
     from PIL.ImageFile import ImageFile
-
     PIL_AVAILABLE = True
+    
+    # Force register WebP plugin for BytesIO compatibility
+    try:
+        from PIL import WebPImagePlugin
+        PILImage.register_open(WebPImagePlugin.WebPImageFile.format, WebPImagePlugin.WebPImageFile, WebPImagePlugin._accept)
+        PILImage.register_extension(WebPImagePlugin.WebPImageFile.format, ".webp")
+        PILImage.register_mime(WebPImagePlugin.WebPImageFile.format, "image/webp")
+    except Exception:
+        pass
+        
 except ImportError:
     PIL_AVAILABLE = False
+
 
 
 class NodeExtension(Extension):
@@ -136,7 +143,7 @@ class ImageRef:
         Initialize image reference.
 
         Args:
-            image: PIL Image object or path to image file
+            image: Base64 string, PIL Image object, or path to image file
             image_index: Index for multiple images in same cell
         """
         self.image = image
@@ -145,9 +152,27 @@ class ImageRef:
         self.rdcolx = -1
         self.wtrowx = -1
         self.wtcolx = -1
+        self.allow_insert = False
 
-        # Validate image path if not PIL Image
-        if PIL_AVAILABLE and not isinstance(image, ImageFile):
+        if isinstance(image, bytes):
+            try:
+                image_bytes = b64decode(image)
+                pil_img = PILImage.open(BytesIO(image_bytes))
+                
+                # Excel tidak mendukung WebP secara native, wajib diconvert in-memory ke PNG
+                if pil_img.format == 'WEBP':
+                    png_io = BytesIO()
+                    pil_img.save(png_io, format='PNG')
+                    self.image = png_io
+                else:
+                    self.image = pil_img
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error('Error decoding image bytes: %s', e)
+                self.image = None
+                
+        # Validate image path if not PIL Image or BytesIO
+        elif PIL_AVAILABLE and not getattr(self, 'image', None) or (not isinstance(self.image, BytesIO) and not isinstance(self.image, ImageFile)):
             fname = str(image)
             if not os.path.exists(fname):
                 self.image = None
