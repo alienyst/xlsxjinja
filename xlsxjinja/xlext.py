@@ -189,13 +189,14 @@ class ImageRef:
 
 
 class ImageExtension(Extension):
-    """Extension for inserting images into cells (img tag)."""
+    """Extension for inserting images into cells (img / insert_img tags)."""
 
-    tags = {"img"}
+    tags = {"img", "insert_img"}
 
     def parse(self, parser):
+        tag_name = parser.stream.current.value
         lineno = next(parser.stream).lineno
-        args = [parser.parse_expression()]
+        args = [nodes.Const(tag_name), parser.parse_expression()]
 
         if parser.stream.skip_if("comma"):
             args.append(parser.parse_expression())
@@ -207,23 +208,15 @@ class ImageExtension(Extension):
             self.call_method("_image", args), [], [], body
         ).set_lineno(lineno)
 
-    def _image(self, image, image_index, caller):
-        """
-        Handle image insertion.
-
-        Args:
-            image: PIL Image or path to image file
-            image_index: Index for multiple images
-
-        Returns:
-            'image' placeholder string
-        """
+    def _image(self, tag_name, image, image_index, caller):
         if not PIL_AVAILABLE:
             return ""
 
         image_ref = ImageRef(image, image_index)
 
         if image_ref.image:
+            if tag_name == "insert_img":
+                image_ref.allow_insert = True
             node = self.environment.node_map.current_node
             node.set_image_ref(image_ref)
 
