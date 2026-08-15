@@ -127,17 +127,131 @@ ERROR - Cell B4 : {{ item.name }}
 {{ items[0].price }}
 ```
 
-#### Loops
+#### Non-String Values (`{% xv %}`)
 
-In cell comments or inline:
+By default all cell values are rendered as strings. Use `{% xv %}` to preserve
+the original Python type (number, date, boolean) so Excel treats it correctly:
 
 ```jinja2
-{%- for item in items %}
-{{ item.name }}
-{%- endfor %}
+{% xv total_amount %}
+{% xv sale_date %}
+{% xv item.qty, 1 %}
 ```
 
-#### Conditionals
+The optional second argument is an index for multiple `xv` values in one cell.
+
+#### Checkboxes (`{% yn %}`)
+
+Render a boolean as a checkbox-style value:
+
+```jinja2
+{% yn is_active %}
+```
+
+---
+
+## 🔁 Looping
+
+xlsxjinja supports two ways to loop over rows.
+
+### Method 1 — `{% tr %}` tag (recommended for simple rows)
+
+Place `{% tr %}` anywhere inside a cell value. The engine strips the tag and
+promotes surrounding `for`/`if` tags to row-level control flow automatically.
+
+**Rules:**
+- Opening tags (`{% for %}`, `{% if %}`, `{% elif %}`, `{% else %}`) at the
+  **start** of the cell value → hoisted to `beforerow` of that row.
+- Closing tags (`{% endfor %}`, `{% endif %}`) at the **end** of the cell
+  value → placed as `aftercell` of that cell.
+- Put `{% tr %}` **before** the opening tag and **after** the closing tag.
+
+**Template layout:**
+
+| A | B | C |
+|---|---|---|
+| Name | Qty | Price |
+| `{% tr %}{% for line in lines %}{{ line.name }}` | `{{ line.qty }}` | `{{ line.price }}{% tr %}{% endfor %}` |
+
+**Example — basic loop:**
+
+```python
+import openpyxl
+from xlsxjinja import BookWriter
+
+wb = openpyxl.Workbook()
+ws = wb.active
+ws['A1'], ws['B1'] = 'Name', 'Price'
+ws['A2'] = '{% tr %}{% for item in items %}{{ item["name"] }}'
+ws['B2'] = '{{ item["price"] }}{% tr %}{% endfor %}'
+wb.save('template.xlsx')
+
+writer = BookWriter('template.xlsx')
+writer.render_book([{
+    'tpl_name': ws.title,
+    'sheet_name': 'Report',
+    'items': [{'name': 'Laptop', 'price': 999}, {'name': 'Mouse', 'price': 25}],
+}])
+writer.save('output.xlsx')
+```
+
+**Example — conditional row with `{% tr %}`:**
+
+| A | B |
+|---|---|
+| `{% tr %}{% if show_total %}TOTAL` | `{{ total }}{% tr %}{% endif %}` |
+
+### Method 2 — Cell comment `beforerow` (required for merged-cell rows)
+
+Place Jinja2 control tags inside a **cell comment** using the key `beforerow`.
+This is the only supported method when:
+
+- The template row contains **merged cells**, or
+- A single `{% for %}` block needs to span **multiple template rows**
+  (e.g. `display_type` patterns with section rows and product rows).
+
+**Comment format (inside the cell comment):**
+```
+beforerow:{% for line in lines %}
+```
+
+Add the comment to the **first cell** of the row where the loop starts.
+Close the loop at the end of the last row's cell value.
+
+**Example — `display_type` (section row merged A:C, product rows normal):**
+
+```
+Row 1  — Header:  Description | Qty | Price
+Row 2  — A2:C2 merged, comment on A2:
+           beforerow:{% for line in lines %}{% if line.display_type == 'line_section' %}
+         Cell A2 value:
+           {{ line.name }}{% endif %}
+Row 3  — comment on A3:
+           beforerow:{% if not line.display_type %}
+         Cell A3: {{ line.name }}
+         Cell B3: {{ line.qty }}
+         Cell C3: {{ line.price }}{% endif %}{% endfor %}
+```
+
+> **Why not `{% tr %}` here?**
+>
+> `{% tr %}` promotes opening tags to the `beforerow` of **its own row only**.
+> A `{% for %}` that must open on row 2 and close on row 3 cannot be expressed
+> with `{% tr %}` — the tag boundary is one row. Use `beforerow` comments instead.
+
+### Comparison
+
+| Scenario | `{% tr %}` | `beforerow` comment |
+|---|---|---|
+| Simple row loop | ✅ | ✅ |
+| Conditional row | ✅ | ✅ |
+| Merged cell row | ❌ | ✅ |
+| `for` spanning multiple template rows | ❌ | ✅ |
+| No Excel comment needed | ✅ | ❌ |
+
+---
+
+## 🔀 Conditionals
 
 ```jinja2
 {% if approved %}
@@ -147,36 +261,45 @@ In cell comments or inline:
 {% endif %}
 ```
 
-#### Non-String Values
+Can also be used inline with `{% tr %}` (see Looping above).
 
-For numbers, dates, or formulas:
+---
 
-```jinja2
-{% xv total_amount %}
-{% xv sale_date %}
-```
+## 🖼️ Images
 
-#### Images
+### Replace a placeholder image (`{% img %}`)
+
+Insert a dummy image in the template cell. At render time the dummy is replaced:
 
 ```jinja2
 {% img product_photo %}
+{% img product_photo, 1 %}
 ```
 
-#### Checkboxes
+Requires `pip install xlsxjinja[image]`.
+
+### Insert a new image (`{% insert_img %}`)
+
+Insert an image into a cell that has **no placeholder** in the template.
+The image is automatically sized to fit the cell's column width and row height:
 
 ```jinja2
-{% yn is_active %}
+{% insert_img company_logo %}
 ```
 
-### Template Placement
-
-You can place Jinja2 tags in:
-
-1. **Cell values** - Direct replacement
-2. **Cell comments** - Control flow (beforerow, beforecell, aftercell)
-3. **Inline** (v0.9+) - Mix text and tags in cells
+`company_logo` must be a PIL `Image` object, a `BytesIO`, or a base64-encoded
+`bytes` value. WebP images are automatically converted to PNG in-memory.
 
 ---
+
+### Template Placement Summary
+
+| Location | Use for |
+|---|---|
+| **Cell value** | Variables, inline loops/conditionals via `{% tr %}` / `{% tc %}` |
+| **Cell comment** `beforerow` | Loop/conditional opening tags, especially for merged rows |
+| **Cell comment** `aftercell` | Loop/conditional closing tags (rarely needed manually) |
+
 
 ## 🎯 Advanced Usage
 
