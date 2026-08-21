@@ -381,7 +381,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 MIT License
 
 - Original work Copyright (c) 2020 Zhang Yu ([xltpl](https://github.com/zhangyu836/xltpl))
-- Modified work Copyright (c) 2024 [Your Name] (xlsxjinja)
+- Modified work Copyright (c) 2024 alienyst (xlsxjinja)
 
 This project is a fork of xltpl with significant refactoring:
 - Dropped Python 2 support
@@ -407,9 +407,9 @@ Major changes in this fork:
 
 ## 📞 Support
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/xlsxjinja/issues)
-- 💡 **Discussions**: [GitHub Discussions](https://github.com/yourusername/xlsxjinja/discussions)
-- 📧 **Email**: your.email@example.com
+- 🐛 **Issues**: [GitHub Issues](https://github.com/alienyst/xlsxjinja/issues)
+- 💡 **Discussions**: [GitHub Discussions](https://github.com/alienyst/xlsxjinja/discussions)
+- 📧 **Email**: aliimrandtb@gmail.com
 
 ---
 

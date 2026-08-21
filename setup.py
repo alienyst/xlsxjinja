@@ -15,7 +15,7 @@ setup(
     version="1.0.0",
     author="Ali Ns",
     author_email="aliimrandtb@gmail.com",
-    url="https://github.com/yourusername/xlsxjinja",
+    url="https://github.com/alienyst/xlsxjinja",
     packages=["xlsxjinja"],
     install_requires=[
         "openpyxl>=3.1.0",

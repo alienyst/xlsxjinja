@@ -115,13 +115,13 @@ Licensed under MIT License.
 MIT License
 
 - Original work Copyright (c) 2020 Zhang Yu (xltpl)
-- Modified work Copyright (c) 2024 [Your Name] (xlsxjinja)
+- Modified work Copyright (c) 2024 alienyst (xlsxjinja)
 
 ---
 
 ## Future Releases
 
-Track planned features and improvements on [GitHub Issues](https://github.com/yourusername/xlsxjinja/issues).
+Track planned features and improvements on [GitHub Issues](https://github.com/alienyst/xlsxjinja/issues).
 
 Potential roadmap:
 - [ ] `save_to_stream()` — render directly to `BytesIO` without a temp file

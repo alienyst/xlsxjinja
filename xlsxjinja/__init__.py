@@ -29,5 +29,5 @@ from .logger import get_logger, setup_logger
 from .writer import BookWriter
 
 __version__ = "1.0.0"
-__author__ = "Your Name"  # Update dengan nama Anda
+__author__ = "alienyst"
 __all__ = ["BookWriter", "setup_logger", "get_logger"]
