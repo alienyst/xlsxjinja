@@ -21,6 +21,10 @@ setup(
         "openpyxl>=3.1.0",
         "jinja2>=2.10",
     ],
+    extras_require={
+        "image": ["Pillow>=9.0"],
+        "all": ["Pillow>=9.0"],
+    },
     python_requires=">=3.7",
     description="Generate Excel (.xlsx) files from templates using Jinja2",
     long_description=long_description,
