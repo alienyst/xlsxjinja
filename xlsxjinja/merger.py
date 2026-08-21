@@ -246,8 +246,9 @@ class ImageMerger(MergerMixin):
     def set_image_ref(self, image_ref):
         _merge = self._merge_map.get(image_ref.image_key)
         if not _merge:
-            return
+            return False
         _merge.set_image_ref(image_ref)
+        return True
 
     def merge_cell(self, rdrowx, rdcolx, wtrowx, wtcolx):
         for _merge in self._merge_list:
@@ -318,6 +319,7 @@ class Merger:
         for merger in _merger_list:
             if merger.to_merge:
                 self.merger_list.append(merger)
+        self._extra_images = []
 
     def merge_cell(self, rdrowx, rdcolx, wtrowx, wtcolx):
         for merger in self.merger_list:
@@ -326,6 +328,45 @@ class Merger:
     def collect_range(self, wtsheet):
         for merger in self.merger_list:
             merger.collect_range(wtsheet)
+        self._flush_extra_images(wtsheet)
+
+    def _flush_extra_images(self, wtsheet):
+        from math import floor
+        from openpyxl.drawing.image import Image as OpenpyxlImage
+        from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, OneCellAnchor
+        from openpyxl.drawing.xdr import XDRPositiveSize2D
+        from openpyxl.utils import get_column_letter
+        from openpyxl.utils.units import points_to_pixels, pixels_to_EMU
+
+        _DEFAULT_COL_WIDTH = 8.43
+        _DEFAULT_ROW_HEIGHT = 15
+
+        for image_ref in self._extra_images:
+            img = image_ref.image
+            if not img:
+                continue
+            row = image_ref.wtrowx or 1
+            col = image_ref.wtcolx or 1
+            col_letter = get_column_letter(col)
+            col_dim = wtsheet.column_dimensions.get(col_letter)
+            row_dim = wtsheet.row_dimensions.get(row)
+            col_width = (col_dim.width if col_dim else None) or _DEFAULT_COL_WIDTH
+            row_height = (row_dim.height if row_dim else None) or _DEFAULT_ROW_HEIGHT
+            w = max(int(floor((col_width * 256 + 128) / 256 * 7)), 1)
+            h = max(int(points_to_pixels(row_height)), 1)
+            opx_img = OpenpyxlImage(img)
+            opx_img.width = w
+            opx_img.height = h
+            opx_img.anchor = OneCellAnchor(
+                _from=AnchorMarker(col=col, colOff=0, row=row - 1, rowOff=0),
+                ext=XDRPositiveSize2D(pixels_to_EMU(w), pixels_to_EMU(h)),
+            )
+            wtsheet.add_image(opx_img)
+        self._extra_images.clear()
 
     def set_image_ref(self, image_ref):
-        self.image_merger.set_image_ref(image_ref)
+        handled = self.image_merger.set_image_ref(image_ref)
+        if handled:
+            return
+        if getattr(image_ref, 'allow_insert', False) and image_ref.image:
+            self._extra_images.append(image_ref)
