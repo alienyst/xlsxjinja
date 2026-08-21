@@ -12,8 +12,8 @@ with open(README, "r", encoding="utf-8") as fd:
 
 setup(
     name="xlsxjinja",
-    version="1.0.0",
-    author="Ali Ns",
+    version="1.1.0",
+    author="alienyst",
     author_email="aliimrandtb@gmail.com",
     url="https://github.com/alienyst/xlsxjinja",
     packages=["xlsxjinja"],
