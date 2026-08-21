@@ -2,6 +2,42 @@
 
 All notable changes to **xlsxjinja** will be documented in this file.
 
+## [1.1.0] - 2026-08
+
+### ✨ New Features
+
+- **`{% tr %}` tag** — inline row-level `for`/`if` control flow without needing
+  a cell comment. Opening tags at the start of a cell value are hoisted to
+  `beforerow`; closing tags at the end are placed as `aftercell`.
+- **`{% tc %}` tag** — inline column-level conditional marker (tag stripping;
+  see README for current scope and limitations).
+- **`{% insert_img %}` tag** — insert an image into a cell with no existing
+  placeholder. Image is auto-sized to the cell's column width / row height
+  via `OneCellAnchor`.
+- **Native WebP image support** — `ImageRef` now decodes base64 image bytes
+  directly and converts WebP to PNG in-memory (no external `dwebp` binary
+  required). Pillow's `WebPImagePlugin` is force-registered on import so
+  `Image.open()` reliably recognizes WebP from `BytesIO`.
+- **`NestedDateTime` timezone fix** — patches openpyxl to strip timezone info
+  from `dcterms:modified` before XML serialization, fixing a corruption issue
+  observed on Odoo.sh.
+
+### 📦 Dependencies
+
+- **Pillow is now optional.** Core install (`pip install xlsxjinja`) only
+  requires `openpyxl` + `jinja2`. Image tags (`{% img %}`, `{% insert_img %}`)
+  require `pip install xlsxjinja[image]`.
+
+### 📄 Documentation
+
+- Added a full "Looping" chapter to the README comparing `{% tr %}` vs.
+  `beforerow` cell-comment loops, including when each is required (merged
+  cells, multi-row `for` blocks).
+- Documented `{% insert_img %}` and WebP auto-conversion behavior.
+- Archived early AI-generated refactoring reports (`SUMMARY.md`,
+  `FINAL_REPORT.md`, `REFACTORING_SUMMARY_V2.md`) to `debug/`; superseded by
+  this changelog and git history.
+
 ## [1.0.0] - 2024-12-13
 
 ### 🎉 Initial Release
@@ -88,9 +124,14 @@ MIT License
 Track planned features and improvements on [GitHub Issues](https://github.com/yourusername/xlsxjinja/issues).
 
 Potential roadmap:
+- [ ] `save_to_stream()` — render directly to `BytesIO` without a temp file
+- [ ] `{% hyperlink %}` tag — create hyperlinks dynamically from template data
+- [ ] `{% tc %}` full column-hide support (currently only strips the tag)
+- [ ] `{% barcode %}` / `{% qrcode %}` tags (optional dependency)
+- [ ] Named range support that follows loop expansion
+- [ ] Formula re-anchoring when loops expand row ranges
 - [ ] Type hints throughout codebase
 - [ ] Async support for large files
-- [ ] Streaming mode for memory efficiency
 - [ ] CLI tool for command-line usage
 - [ ] More examples and tutorials
 - [ ] Performance benchmarks

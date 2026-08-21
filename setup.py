@@ -13,9 +13,9 @@ with open(README, "r", encoding="utf-8") as fd:
 setup(
     name="xlsxjinja",
     version="1.0.0",
-    author="Your Name",  # Update dengan nama Anda
-    author_email="your.email@example.com",  # Update dengan email Anda
-    url="https://github.com/yourusername/xlsxjinja",  # Update dengan repo Anda
+    author="Ali Ns",
+    author_email="aliimrandtb@gmail.com",
+    url="https://github.com/yourusername/xlsxjinja",
     packages=["xlsxjinja"],
     install_requires=[
         "openpyxl>=3.1.0",

@@ -40,11 +40,11 @@ xlsxjinja/
 ├── xlnode.py            # ⭐ Node tree structure
 ├── jinja.py             # ⭐ Custom Jinja2 environment
 ├── cellcontext.py       # Cell writing context
-├── merger.py            # Merged cells handling
+├── merger.py            # Merged cells + image insertion handling
 ├── richtexthandler.py   # Rich text processing
-├── xlext.py             # Jinja2 extensions (row, cell, seg, etc.)
+├── xlext.py             # Jinja2 extensions (row, cell, seg, xv, img, insert_img, op)
 ├── ynext.py             # Yes/no checkmark extension
-├── patch.py             # openpyxl patches
+├── patch.py             # openpyxl patches (image dedup, geometry ns, NestedDateTime tz, WebP registration)
 ├── utils.py             # Utility functions
 ├── config.py            # Configuration
 ├── celltag.py           # Cell tag parsing

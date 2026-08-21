@@ -15,14 +15,18 @@ xlsxjinja is a modern Python library that allows you to create Excel spreadsheet
 - 🔗 **Merged Cells** - Automatic handling of merged cell ranges
 - 🔍 **Auto Filters** - Maintain filter settings
 - 🚀 **Modern Python** - Built for Python 3.7+, type-hint ready
-- ⚡ **Fast & Lightweight** - Only 2 dependencies (openpyxl + jinja2)
+- ⚡ **Fast & Lightweight** - Only 2 required dependencies (openpyxl + jinja2)
 
 ---
 
 ## 📦 Installation
 
 ```bash
+# Core install: text, formulas, loops, conditionals - no image support
 pip install xlsxjinja
+
+# With image support ({% img %} and {% insert_img %} tags)
+pip install xlsxjinja[image]
 ```
 
 ### Requirements
@@ -30,6 +34,7 @@ pip install xlsxjinja
 - Python 3.7+
 - openpyxl >= 3.1.0
 - jinja2 >= 2.10
+- Pillow >= 9.0 (optional, only required for `{% img %}` / `{% insert_img %}`)
 
 ---
 

@@ -211,7 +211,13 @@ Jinja2 renders this and calls back to write the cell
 - **NodeExtension**: `{% row %}`, `{% cell %}`
 - **SegmentExtension**: `{% seg %}`
 - **XvExtension**: `{% xv %}`
-- **ImageExtension**: `{% img %}`
+- **ImageExtension**: `{% img %}`, `{% insert_img %}`
+  - `img` replaces an existing template placeholder image.
+  - `insert_img` sets `ImageRef.allow_insert = True`; if no placeholder
+    matches, `Merger._extra_images` collects it and `Merger._flush_extra_images`
+    inserts it via `OneCellAnchor`, sized to the cell's column width/row height.
+  - `ImageRef.__init__` decodes base64 `bytes` directly and converts WebP to
+    PNG in-memory (Pillow's `WebPImagePlugin` is force-registered on import).
 - **OpExtension**: `{% op %}`
 
 #### `ynext.py` - Yes/No Extension
@@ -231,8 +237,10 @@ Jinja2 renders this and calls back to write the cell
 - Cell coordinate conversion
 
 #### `patch.py` - openpyxl Patches
-- Fix image writing issues
+- Fix image writing issues (deduplication in `ExWriter._write_images`)
 - Fix geometry guide list namespace
+- Strip timezone info from `NestedDateTime.to_tree` before XML serialization
+  (fixes a `dcterms:modified` corruption issue seen on Odoo.sh)
 
 ---
 
@@ -327,6 +335,27 @@ Jinja2 processes:
 - Renders: "Hello John, total: 100"
 - Calls write_cell() via callback
 ```
+
+### `{% tr %}` / `{% tc %}` Tag Interception
+
+Unlike other tags, `{% tr %}` / `{% tc %}` are **not** Jinja2 extensions. They
+are intercepted by regex in `writer.py`'s `build()` loop, before `create_cell()`
+runs:
+
+```
+Cell value: "{% tr %}{% for line in lines %}{{ line.name }}"
+↓
+1. Strip all {% tr %} occurrences via regex
+2. Match leading (for|if|elif|else) tags -> push to row_node.cell_tag.beforerow
+3. Match trailing (endfor|endif) tags -> push to cell_tag_map['aftercell']
+4. Remaining value proceeds through the normal Cell/TagCell pipeline
+```
+
+This lets simple row loops/conditionals be written inline, without needing a
+cell comment. It does **not** support a `for`/`if` that must open on one
+template row and close on a different template row (e.g. merged section rows
+followed by normal product rows) -- use a `beforerow` cell comment for that
+case. See README "Looping" section for the full comparison.
 
 ### Phase 4: Excel Writing
 
